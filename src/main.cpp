@@ -1,95 +1,223 @@
 #include "project.hpp"
+
+#include <iomanip>
 #include <iostream>
+#include <limits>
+#include <string>
 
 using namespace std;
 
-int main() {
-    int choice = -1;
+void clearInputLine() {
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+}
 
-    cout << "CISC 192 Final Project Sample" << endl;
-    cout << "Sample code is provided only as an example." << endl;
-    cout << "Delete or replace the sample code before final submission." << endl;
+int main() {
+    InventoryManager inventory;
+    int choice = 0;
+
+    cout << "CISC 192 Final Project: Inventory Management System"
+         << endl;
+
+    if (inventory.loadFromFile("data/inventory.txt")) {
+        cout << "Starting inventory loaded from data/inventory.txt."
+             << endl;
+    } else {
+        cout << "No starting inventory file was loaded." << endl;
+    }
 
     do {
         printMenu();
-        cin >> choice;
 
-        while (!isValidMenuChoice(choice)) {
-            cout << "Invalid choice. Enter 0-4: ";
-            cin >> choice;
+        if (!(cin >> choice)) {
+            cin.clear();
+            clearInputLine();
+            cout << "Invalid input. Please enter a number from 1 to 8."
+                 << endl;
+            continue;
+        }
+
+        clearInputLine();
+
+        if (!isValidMenuChoice(choice)) {
+            cout << "Invalid choice. Please enter a number from 1 to 8."
+                 << endl;
+            continue;
         }
 
         switch (choice) {
             case 1: {
-                Student student("A123", "Alex");
-                student.getScoreList().addScore(90.0);
-                student.getScoreList().addScore(80.0);
-                student.getScoreList().addScore(100.0);
-                student.getScoreList().sortAscending();
-
-                printStudent(student);
-                cout << "Score 100 found at index "
-                     << student.getScoreList().findScore(100.0)
-                     << endl;
-
+                inventory.displayInventory();
                 break;
             }
 
             case 2: {
-                TaskList tasks;
-                tasks.insertFront(Task("study", 5));
-                tasks.insertFront(Task("project", 4));
-                tasks.markTaskComplete("study");
+                string sku;
+                string name;
+                int quantity;
+                double price;
 
-                cout << "Task count: " << tasks.countTasks() << endl;
-                cout << "Removed completed tasks: "
-                     << tasks.removeCompletedTasks()
-                     << endl;
-                cout << "Remaining task count: " << tasks.countTasks() << endl;
+                cout << "Enter SKU: ";
+                getline(cin, sku);
 
-                break;
-            }
+                cout << "Enter item name: ";
+                getline(cin, name);
 
-            case 3: {
-                InventoryItem items[MAX_INVENTORY_ITEMS];
-                int count = InventoryReport::readInventoryFile(
-                    "data/inventory.txt",
-                    items,
-                    MAX_INVENTORY_ITEMS
-                );
+                cout << "Enter quantity: ";
+                if (!(cin >> quantity)) {
+                    cin.clear();
+                    clearInputLine();
+                    cout << "Invalid quantity." << endl;
+                    break;
+                }
 
-                cout << "Read " << count << " inventory item(s)." << endl;
-                cout << "Total inventory value: "
-                     << InventoryReport::calculateTotalInventoryValue(items, count)
-                     << endl;
+                cout << "Enter price: ";
+                if (!(cin >> price)) {
+                    cin.clear();
+                    clearInputLine();
+                    cout << "Invalid price." << endl;
+                    break;
+                }
 
-                if (InventoryReport::writeInventoryReport(
-                        "inventory_report.txt",
-                        items,
-                        count
-                    )) {
-                    cout << "Report written to inventory_report.txt" << endl;
+                clearInputLine();
+
+                if (inventory.addItem(sku, name, quantity, price)) {
+                    cout << "Item added successfully." << endl;
+                } else {
+                    cout << "Item could not be added. Check the values "
+                         << "and make sure the SKU is unique." << endl;
                 }
 
                 break;
             }
 
-            case 4:
-                cout << "Use this sample only as an example. "
-                     << "Delete or replace sample code before submission."
+            case 3: {
+                string sku;
+
+                cout << "Enter SKU to find: ";
+                getline(cin, sku);
+
+                const InventoryNode* found = inventory.findItem(sku);
+
+                if (found == nullptr) {
+                    cout << "Item not found." << endl;
+                } else {
+                    cout << fixed << setprecision(2);
+                    cout << "SKU: " << found->item.sku << endl;
+                    cout << "Name: " << found->item.name << endl;
+                    cout << "Quantity: " << found->item.quantity << endl;
+                    cout << "Price: $" << found->item.price << endl;
+                    cout << "Value: $"
+                         << inventory.calculateItemValue(found->item)
+                         << endl;
+                }
+
+                break;
+            }
+
+            case 4: {
+                string sku;
+                int newQuantity;
+
+                cout << "Enter SKU to update: ";
+                getline(cin, sku);
+
+                cout << "Enter new quantity: ";
+                if (!(cin >> newQuantity)) {
+                    cin.clear();
+                    clearInputLine();
+                    cout << "Invalid quantity." << endl;
+                    break;
+                }
+
+                clearInputLine();
+
+                if (inventory.updateQuantity(sku, newQuantity)) {
+                    cout << "Quantity updated successfully." << endl;
+                } else {
+                    cout << "Item was not found or the quantity was invalid."
+                         << endl;
+                }
+
+                break;
+            }
+
+            case 5: {
+                string sku;
+
+                cout << "Enter SKU to remove: ";
+                getline(cin, sku);
+
+                if (inventory.removeItem(sku)) {
+                    cout << "Item removed successfully." << endl;
+                } else {
+                    cout << "Item not found." << endl;
+                }
+
+                break;
+            }
+
+            case 6: {
+                InventoryItem items[MAX_INVENTORY_ITEMS];
+
+                int count = inventory.copyItemsToArray(
+                    items,
+                    MAX_INVENTORY_ITEMS
+                );
+
+                InventoryManager::sortItemsByQuantity(items, count);
+
+                if (count == 0) {
+                    cout << "Inventory is empty." << endl;
+                    break;
+                }
+
+                cout << fixed << setprecision(2);
+                cout << left
+                     << setw(12) << "SKU"
+                     << setw(22) << "Name"
+                     << setw(12) << "Quantity"
+                     << setw(12) << "Price"
                      << endl;
-                break;
 
-            case 0:
-                cout << "Goodbye!" << endl;
-                break;
+                cout << "--------------------------------------------------"
+                     << endl;
 
-            default:
-                cout << "Unexpected choice." << endl;
+                for (int i = 0; i < count; i++) {
+                    cout << left
+                         << setw(12) << items[i].sku
+                         << setw(22) << items[i].name
+                         << setw(12) << items[i].quantity
+                         << "$" << items[i].price
+                         << endl;
+                }
+
                 break;
+            }
+
+            case 7: {
+                string filename;
+
+                cout << "Enter report filename "
+                     << "(example: data/inventory_report.txt): ";
+                getline(cin, filename);
+
+                if (inventory.saveReportToFile(filename)) {
+                    cout << "Inventory report saved successfully."
+                         << endl;
+                } else {
+                    cout << "The inventory report could not be saved."
+                         << endl;
+                }
+
+                break;
+            }
+
+            case 8: {
+                cout << "Exiting Inventory Management System." << endl;
+                break;
+            }
         }
-
-    } while (choice != 0);
+    } while (choice != 8);
 
     return 0;
 }

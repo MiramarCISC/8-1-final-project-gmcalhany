@@ -1,215 +1,198 @@
 #include "project.hpp"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 
 using namespace std;
 
-// ===============================
-// ScoreList
-// ===============================
-
-ScoreList::ScoreList() {
-    count = 0;
-
-    for (int i = 0; i < 10; i++) {
-        scores[i] = 0.0;
-    }
+// InventoryNode
+InventoryNode::InventoryNode(const InventoryItem& inventoryItem) {
+    item = inventoryItem;
+    next = nullptr;
 }
 
-bool ScoreList::addScore(double score) {
-    if (!isValidScore(score) || count >= 10) {
+// InventoryManager
+InventoryManager::InventoryManager() {
+    head = nullptr;
+    itemCount = 0;
+}
+
+InventoryManager::~InventoryManager() {
+    clear();
+}
+
+bool InventoryManager::isValidSku(const string& sku) {
+    return !sku.empty();
+}
+
+bool InventoryManager::isValidName(const string& name) {
+    return !name.empty();
+}
+
+bool InventoryManager::isValidQuantity(int quantity) {
+    return quantity >= MIN_QUANTITY;
+}
+
+bool InventoryManager::isValidPrice(double price) {
+    return price >= MIN_PRICE;
+}
+
+bool InventoryManager::addItem(
+    const string& sku,
+    const string& name,
+    int quantity,
+    double price
+) {
+    if (!isValidSku(sku) ||
+        !isValidName(name) ||
+        !isValidQuantity(quantity) ||
+        !isValidPrice(price)) {
         return false;
     }
 
-    scores[count] = score;
-    count++;
+    if (itemCount >= MAX_INVENTORY_ITEMS) {
+        return false;
+    }
 
+    if (findItem(sku) != nullptr) {
+        return false;
+    }
+
+    InventoryItem newItem;
+    newItem.sku = sku;
+    newItem.name = name;
+    newItem.quantity = quantity;
+    newItem.price = price;
+
+    InventoryNode* newNode = new InventoryNode(newItem);
+
+    if (head == nullptr) {
+        head = newNode;
+    } else {
+        InventoryNode* current = head;
+
+        while (current->next != nullptr) {
+            current = current->next;
+        }
+
+        current->next = newNode;
+    }
+
+    itemCount++;
     return true;
 }
 
-int ScoreList::getCount() const {
-    return count;
-}
+InventoryNode* InventoryManager::findItem(const string& sku) {
+    InventoryNode* current = head;
 
-double ScoreList::getScoreAt(int index) const {
-    if (index < 0 || index >= count) {
-        return 0.0;
+    while (current != nullptr) {
+        if (current->item.sku == sku) {
+            return current;
+        }
+
+        current = current->next;
     }
 
-    return scores[index];
+    return nullptr;
 }
 
-double ScoreList::getTotal() const {
+const InventoryNode* InventoryManager::findItem(const string& sku) const {
+    const InventoryNode* current = head;
+
+    while (current != nullptr) {
+        if (current->item.sku == sku) {
+            return current;
+        }
+
+        current = current->next;
+    }
+
+    return nullptr;
+}
+
+bool InventoryManager::updateQuantity(
+    const string& sku,
+    int newQuantity
+) {
+    if (!isValidQuantity(newQuantity)) {
+        return false;
+    }
+
+    InventoryNode* item = findItem(sku);
+
+    if (item == nullptr) {
+        return false;
+    }
+
+    item->item.quantity = newQuantity;
+    return true;
+}
+
+bool InventoryManager::removeItem(const string& sku) {
+    InventoryNode* current = head;
+    InventoryNode* previous = nullptr;
+
+    while (current != nullptr) {
+        if (current->item.sku == sku) {
+            if (previous == nullptr) {
+                head = current->next;
+            } else {
+                previous->next = current->next;
+            }
+
+            delete current;
+            itemCount--;
+            return true;
+        }
+
+        previous = current;
+        current = current->next;
+    }
+
+    return false;
+}
+
+int InventoryManager::getItemCount() const {
+    return itemCount;
+}
+
+bool InventoryManager::isEmpty() const {
+    return head == nullptr;
+}
+
+double InventoryManager::calculateItemValue(
+    const InventoryItem& item
+) const {
+    return item.quantity * item.price;
+}
+
+double InventoryManager::calculateTotalValue() const {
     double total = 0.0;
 
-    for (int i = 0; i < count; i++) {
-        total += scores[i];
+    const InventoryNode* current = head;
+
+    while (current != nullptr) {
+        total += calculateItemValue(current->item);
+        current = current->next;
     }
 
     return total;
 }
 
-double ScoreList::getAverage() const {
-    if (count == 0) {
-        return 0.0;
+int InventoryManager::copyItemsToArray(
+    InventoryItem items[],
+    int maxItems
+) const {
+    if (items == nullptr || maxItems <= 0) {
+        return 0;
     }
 
-    return getTotal() / count;
-}
-
-int ScoreList::findScore(double target) const {
-    for (int i = 0; i < count; i++) {
-        if (scores[i] == target) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-void ScoreList::sortAscending() {
-    for (int start = 0; start < count - 1; start++) {
-        int minIndex = start;
-
-        for (int i = start + 1; i < count; i++) {
-            if (scores[i] < scores[minIndex]) {
-                minIndex = i;
-            }
-        }
-
-        double temp = scores[start];
-        scores[start] = scores[minIndex];
-        scores[minIndex] = temp;
-    }
-}
-
-bool ScoreList::isValidScore(double score) {
-    return score >= 0.0 && score <= 100.0;
-}
-
-// ===============================
-// Student
-// ===============================
-
-Student::Student() {
-    id = "";
-    name = "";
-}
-
-Student::Student(string studentId, string studentName) {
-    id = studentId;
-    name = studentName;
-}
-
-string Student::getId() const {
-    return id;
-}
-
-string Student::getName() const {
-    return name;
-}
-
-ScoreList& Student::getScoreList() {
-    return scoreList;
-}
-
-const ScoreList& Student::getScoreList() const {
-    return scoreList;
-}
-
-double Student::getAverage() const {
-    return scoreList.getAverage();
-}
-
-char Student::getLetterGrade() const {
-    return determineLetterGrade(getAverage());
-}
-
-bool Student::isValidId(string id) {
-    return id.length() >= 3 && id[0] >= 'A' && id[0] <= 'Z';
-}
-
-char Student::determineLetterGrade(double average) {
-    if (average >= A_MINIMUM) {
-        return 'A';
-    } else if (average >= B_MINIMUM) {
-        return 'B';
-    } else if (average >= C_MINIMUM) {
-        return 'C';
-    } else if (average >= D_MINIMUM) {
-        return 'D';
-    } else {
-        return 'F';
-    }
-}
-
-// ===============================
-// Task and TaskList
-// ===============================
-
-Task::Task() {
-    description = "";
-    priority = 1;
-    completed = false;
-}
-
-Task::Task(string taskDescription, int taskPriority) {
-    description = taskDescription;
-
-    if (isValidPriority(taskPriority)) {
-        priority = taskPriority;
-    } else {
-        priority = 1;
-    }
-
-    completed = false;
-}
-
-string Task::getDescription() const {
-    return description;
-}
-
-int Task::getPriority() const {
-    return priority;
-}
-
-bool Task::isCompleted() const {
-    return completed;
-}
-
-void Task::markComplete() {
-    completed = true;
-}
-
-bool Task::isValidPriority(int priority) {
-    return priority >= 1 && priority <= 5;
-}
-
-TaskNode::TaskNode(Task task) {
-    data = task;
-    next = nullptr;
-}
-
-TaskList::TaskList() {
-    head = nullptr;
-}
-
-TaskList::~TaskList() {
-    clear();
-}
-
-void TaskList::insertFront(Task task) {
-    TaskNode* newNode = new TaskNode(task);
-    newNode->next = head;
-    head = newNode;
-}
-
-int TaskList::countTasks() const {
     int count = 0;
-    const TaskNode* current = head;
+    const InventoryNode* current = head;
 
-    while (current != nullptr) {
+    while (current != nullptr && count < maxItems) {
+        items[count] = current->item;
         count++;
         current = current->next;
     }
@@ -217,181 +200,26 @@ int TaskList::countTasks() const {
     return count;
 }
 
-TaskNode* TaskList::findTask(string description) {
-    TaskNode* current = head;
-
-    while (current != nullptr) {
-        if (current->data.getDescription() == description) {
-            return current;
-        }
-
-        current = current->next;
-    }
-
-    return nullptr;
-}
-
-const TaskNode* TaskList::findTask(string description) const {
-    const TaskNode* current = head;
-
-    while (current != nullptr) {
-        if (current->data.getDescription() == description) {
-            return current;
-        }
-
-        current = current->next;
-    }
-
-    return nullptr;
-}
-
-bool TaskList::markTaskComplete(string description) {
-    TaskNode* found = findTask(description);
-
-    if (found == nullptr) {
-        return false;
-    }
-
-    found->data.markComplete();
-    return true;
-}
-
-int TaskList::removeCompletedTasks() {
-    int removed = 0;
-
-    while (head != nullptr && head->data.isCompleted()) {
-        TaskNode* nodeToRemove = head;
-        head = head->next;
-        delete nodeToRemove;
-        removed++;
-    }
-
-    TaskNode* current = head;
-
-    while (current != nullptr && current->next != nullptr) {
-        if (current->next->data.isCompleted()) {
-            TaskNode* nodeToRemove = current->next;
-            current->next = nodeToRemove->next;
-            delete nodeToRemove;
-            removed++;
-        } else {
-            current = current->next;
+void InventoryManager::sortItemsByQuantity(
+    InventoryItem items[],
+    int count
+) {
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = 0; j < count - i - 1; j++) {
+            if (items[j].quantity > items[j + 1].quantity) {
+                InventoryItem temp = items[j];
+                items[j] = items[j + 1];
+                items[j + 1] = temp;
+            }
         }
     }
-
-    return removed;
 }
 
-void TaskList::clear() {
-    TaskNode* current = head;
-
-    while (current != nullptr) {
-        TaskNode* nextNode = current->next;
-        delete current;
-        current = nextNode;
-    }
-
-    head = nullptr;
-}
-
-bool TaskList::isEmpty() const {
-    return head == nullptr;
-}
-
-// ===============================
-// InventoryReport
-// ===============================
-
-bool InventoryReport::isValidQuantity(int quantity) {
-    return quantity >= 0;
-}
-
-bool InventoryReport::isValidPrice(double price) {
-    return price >= 0.0;
-}
-
-double InventoryReport::calculateItemValue(const InventoryItem& item) {
-    if (!isValidQuantity(item.quantity) || !isValidPrice(item.price)) {
-        return 0.0;
-    }
-
-    return item.quantity * item.price;
-}
-
-int InventoryReport::readInventoryFile(string filename, InventoryItem items[], int maxItems) {
-    if (items == nullptr || maxItems <= 0) {
-        return 0;
-    }
-
-    ifstream in(filename);
-
-    if (!in.is_open()) {
-        return 0;
-    }
-
-    int count = 0;
-    InventoryItem item;
-
-    while (count < maxItems &&
-           in >> item.sku >> item.name >> item.quantity >> item.price) {
-        if (isValidQuantity(item.quantity) && isValidPrice(item.price)) {
-            items[count] = item;
-            count++;
-        }
-    }
-
-    return count;
-}
-
-bool InventoryReport::writeInventoryReport(string filename, const InventoryItem items[], int count) {
-    if (items == nullptr || count < 0) {
-        return false;
-    }
-
-    ofstream out(filename);
-
-    if (!out.is_open()) {
-        return false;
-    }
-
-    out << fixed << setprecision(2);
-    out << "Inventory Report" << endl;
-    out << "SKU Name Quantity Price Value" << endl;
-
-    for (int i = 0; i < count; i++) {
-        out << items[i].sku << " "
-            << items[i].name << " "
-            << items[i].quantity << " "
-            << items[i].price << " "
-            << calculateItemValue(items[i]) << endl;
-    }
-
-    out << "Total inventory value: "
-        << calculateTotalInventoryValue(items, count)
-        << endl;
-
-    return true;
-}
-
-double InventoryReport::calculateTotalInventoryValue(const InventoryItem items[], int count) {
-    if (items == nullptr || count <= 0) {
-        return 0.0;
-    }
-
-    double total = 0.0;
-
-    for (int i = 0; i < count; i++) {
-        total += calculateItemValue(items[i]);
-    }
-
-    return total;
-}
-
-int InventoryReport::findItemBySku(const InventoryItem items[], int count, string sku) {
-    if (items == nullptr || count <= 0) {
-        return -1;
-    }
-
+int InventoryManager::searchArrayBySku(
+    const InventoryItem items[],
+    int count,
+    const string& sku
+) {
     for (int i = 0; i < count; i++) {
         if (items[i].sku == sku) {
             return i;
@@ -401,45 +229,126 @@ int InventoryReport::findItemBySku(const InventoryItem items[], int count, strin
     return -1;
 }
 
-int InventoryReport::findHighestValueItemIndex(const InventoryItem items[], int count) {
-    if (items == nullptr || count <= 0) {
-        return -1;
+bool InventoryManager::loadFromFile(const string& filename) {
+    ifstream input(filename);
+
+    if (!input.is_open()) {
+        return false;
     }
 
-    int highestIndex = 0;
+    string sku;
+    string name;
+    int quantity;
+    double price;
 
-    for (int i = 1; i < count; i++) {
-        if (calculateItemValue(items[i]) > calculateItemValue(items[highestIndex])) {
-            highestIndex = i;
-        }
+    while (input >> sku >> name >> quantity >> price) {
+        addItem(sku, name, quantity, price);
     }
 
-    return highestIndex;
+    input.close();
+    return true;
 }
 
-// ===============================
-// Menu helpers
-// ===============================
+bool InventoryManager::saveReportToFile(
+    const string& filename
+) const {
+    ofstream output(filename);
+
+    if (!output.is_open()) {
+        return false;
+    }
+
+    output << fixed << setprecision(2);
+    output << "INVENTORY REPORT" << endl;
+    output << "================" << endl;
+
+    const InventoryNode* current = head;
+
+    while (current != nullptr) {
+        output << current->item.sku << " "
+               << current->item.name << " "
+               << current->item.quantity << " "
+               << current->item.price << " "
+               << calculateItemValue(current->item)
+               << endl;
+
+        current = current->next;
+    }
+
+    output << "================" << endl;
+    output << "Total Inventory Value: $"
+           << calculateTotalValue() << endl;
+
+    output.close();
+    return true;
+}
+
+void InventoryManager::displayInventory() const {
+    if (head == nullptr) {
+        cout << "Inventory is empty." << endl;
+        return;
+    }
+
+    cout << fixed << setprecision(2);
+
+    cout << left
+         << setw(12) << "SKU"
+         << setw(22) << "Name"
+         << setw(12) << "Quantity"
+         << setw(12) << "Price"
+         << setw(12) << "Value"
+         << endl;
+
+    cout << "--------------------------------------------------------------"
+         << endl;
+
+    const InventoryNode* current = head;
+
+    while (current != nullptr) {
+        cout << left
+             << setw(12) << current->item.sku
+             << setw(22) << current->item.name
+             << setw(12) << current->item.quantity
+             << "$" << setw(11) << current->item.price
+             << "$" << setw(11)
+             << calculateItemValue(current->item)
+             << endl;
+
+        current = current->next;
+    }
+
+    cout << endl;
+    cout << "Total inventory value: $"
+         << calculateTotalValue() << endl;
+}
+
+void InventoryManager::clear() {
+    InventoryNode* current = head;
+
+    while (current != nullptr) {
+        InventoryNode* nextNode = current->next;
+        delete current;
+        current = nextNode;
+    }
+
+    head = nullptr;
+    itemCount = 0;
+}
 
 bool isValidMenuChoice(int choice) {
-    return choice >= 0 && choice <= 4;
+    return choice >= 1 && choice <= 8;
 }
 
 void printMenu() {
     cout << endl;
-    cout << "Final Project Sample Menu" << endl;
-    cout << "1. Demonstrate student scores" << endl;
-    cout << "2. Demonstrate linked task list" << endl;
-    cout << "3. Demonstrate inventory report" << endl;
-    cout << "4. Show instructions" << endl;
-    cout << "0. Exit" << endl;
-    cout << "Choice: ";
-}
-
-void printStudent(const Student& student) {
-    cout << student.getId() << " "
-         << student.getName() << " "
-         << "Average: " << student.getAverage() << " "
-         << "Grade: " << student.getLetterGrade()
-         << endl;
+    cout << "Inventory Management System" << endl;
+    cout << "1. Display inventory" << endl;
+    cout << "2. Add inventory item" << endl;
+    cout << "3. Find item by SKU" << endl;
+    cout << "4. Update item quantity" << endl;
+    cout << "5. Remove item" << endl;
+    cout << "6. Display inventory sorted by quantity" << endl;
+    cout << "7. Save inventory report" << endl;
+    cout << "8. Exit" << endl;
+    cout << "Enter choice: ";
 }
