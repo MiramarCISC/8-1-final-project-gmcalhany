@@ -1,179 +1,190 @@
 #include "project.hpp"
+
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <string>
 
 using namespace std;
 
-bool nearlyEqual(double actual, double expected, double tolerance = 0.0001) {
-    return fabs(actual - expected) <= tolerance;
+bool approximatelyEqual(double first, double second) {
+    return fabs(first - second) < 0.001;
 }
 
-void createTestInventoryFile(string filename) {
-    ofstream out(filename);
-
-    out << "A100 Apples 10 1.50" << endl;
-    out << "B200 Bread 5 3.25" << endl;
-    out << "C300 Cereal 8 4.75" << endl;
-
-    out.close();
-}
-
-// Week 1: Program Basics
+// Week 1: Program basics, variables, constants, arithmetic, and output values.
 void testWeek1ProgramBasics() {
-    ScoreList scores;
-    scores.addScore(80.0);
-    scores.addScore(90.0);
+    InventoryManager inventory;
 
-    double average = scores.getAverage();
+    InventoryItem item;
+    item.sku = "A100";
+    item.name = "Wrench";
+    item.quantity = 4;
+    item.price = 12.50;
 
-    assert(nearlyEqual(average, 85.0));
-    assert(Student::determineLetterGrade(95.0) == 'A');
-    assert(Student::determineLetterGrade(65.0) == 'D');
+    assert(MAX_INVENTORY_ITEMS == 100);
+    assert(MIN_QUANTITY == 0);
+    assert(approximatelyEqual(MIN_PRICE, 0.0));
+    assert(approximatelyEqual(inventory.calculateItemValue(item), 50.0));
 }
 
-// Week 2: Decisions and Loops
+// Week 2: Decisions and loops through validation and duplicate checking.
 void testWeek2DecisionsAndLoops() {
-    assert(ScoreList::isValidScore(0.0));
-    assert(ScoreList::isValidScore(100.0));
-    assert(!ScoreList::isValidScore(-1.0));
-    assert(!ScoreList::isValidScore(101.0));
+    InventoryManager inventory;
 
-    assert(Task::isValidPriority(1));
-    assert(Task::isValidPriority(5));
-    assert(!Task::isValidPriority(0));
-    assert(!Task::isValidPriority(6));
-
-    assert(isValidMenuChoice(0));
-    assert(isValidMenuChoice(4));
-    assert(!isValidMenuChoice(5));
+    assert(inventory.addItem("B200", "Hammer", 5, 18.00));
+    assert(!inventory.addItem("B200", "Duplicate", 2, 5.00));
+    assert(!inventory.addItem("", "MissingSku", 2, 5.00));
+    assert(!inventory.addItem("B201", "", 2, 5.00));
+    assert(!inventory.addItem("B202", "InvalidQuantity", -1, 5.00));
+    assert(!inventory.addItem("B203", "InvalidPrice", 2, -5.00));
+    assert(inventory.getItemCount() == 1);
 }
 
-// Week 3: Functions and Program Design
-void testWeek3FunctionsAndProgramDesign() {
-    ScoreList scores;
-    scores.addScore(70.0);
-    scores.addScore(80.0);
-    scores.addScore(90.0);
+// Week 3: Functions and program design.
+void testWeek3FunctionsAndDesign() {
+    InventoryManager inventory;
 
-    assert(nearlyEqual(scores.getTotal(), 240.0));
-    assert(nearlyEqual(scores.getAverage(), 80.0));
+    assert(inventory.addItem("C300", "Drill", 3, 40.00));
+    assert(inventory.updateQuantity("C300", 8));
+    assert(!inventory.updateQuantity("UNKNOWN", 8));
+    assert(!inventory.updateQuantity("C300", -1));
 
-    Student student("A123", "Alex");
-    assert(student.getId() == "A123");
-    assert(student.getName() == "Alex");
+    const InventoryNode* found = inventory.findItem("C300");
+    assert(found != nullptr);
+    assert(found->item.quantity == 8);
+    assert(approximatelyEqual(inventory.calculateTotalValue(), 320.0));
 }
 
-// Week 4: Arrays, Searching, and Sorting
-void testWeek4ArraysSearchingSorting() {
-    ScoreList scores;
-    scores.addScore(88.0);
-    scores.addScore(72.5);
-    scores.addScore(100.0);
-    scores.addScore(91.0);
+// Week 4: Arrays, searching, and sorting.
+void testWeek4ArraysSearchingAndSorting() {
+    InventoryManager inventory;
 
-    assert(scores.findScore(100.0) == 2);
-    assert(scores.findScore(50.0) == -1);
+    assert(inventory.addItem("D100", "Pliers", 12, 8.00));
+    assert(inventory.addItem("D200", "Saw", 3, 22.00));
+    assert(inventory.addItem("D300", "Level", 7, 14.00));
 
-    scores.sortAscending();
-
-    assert(nearlyEqual(scores.getScoreAt(0), 72.5));
-    assert(nearlyEqual(scores.getScoreAt(1), 88.0));
-    assert(nearlyEqual(scores.getScoreAt(2), 91.0));
-    assert(nearlyEqual(scores.getScoreAt(3), 100.0));
-}
-
-// Week 5: Strings and Structures
-void testWeek5StringsAndStructures() {
-    Student student("A123", "Alex");
-
-    assert(Student::isValidId("A123"));
-    assert(!Student::isValidId("a123"));
-    assert(student.getId() == "A123");
-    assert(student.getName() == "Alex");
-
-    InventoryItem item = {"B200", "Bread", 5, 3.25};
-    assert(item.sku == "B200");
-    assert(item.name == "Bread");
-    assert(item.quantity == 5);
-}
-
-// Week 6: Simple Linked Task List
-void testWeek6SimpleLinkedTaskList() {
-    TaskList tasks;
-
-    tasks.insertFront(Task("homework", 3));
-    tasks.insertFront(Task("study", 5));
-    tasks.insertFront(Task("project", 4));
-
-    assert(tasks.countTasks() == 3);
-    assert(tasks.findTask("study") != nullptr);
-    assert(tasks.findTask("missing") == nullptr);
-
-    assert(tasks.markTaskComplete("homework"));
-    assert(tasks.markTaskComplete("project"));
-
-    int removed = tasks.removeCompletedTasks();
-
-    assert(removed == 2);
-    assert(tasks.countTasks() == 1);
-    assert(tasks.findTask("study") != nullptr);
-    assert(tasks.findTask("homework") == nullptr);
-
-    tasks.clear();
-    assert(tasks.isEmpty());
-}
-
-// Week 7: File-Based Inventory Report
-void testWeek7FileBasedInventoryReport() {
-    string inputFilename = "tests/resources/test_inventory_input.txt";
-    string outputFilename = "tests/resources/test_inventory_report_output.txt";
-
-    createTestInventoryFile(inputFilename);
-
-    InventoryItem items[10];
-    int count = InventoryReport::readInventoryFile(inputFilename, items, 10);
+    InventoryItem items[MAX_INVENTORY_ITEMS];
+    int count = inventory.copyItemsToArray(items, MAX_INVENTORY_ITEMS);
 
     assert(count == 3);
-    assert(items[0].sku == "A100");
-    assert(items[2].name == "Cereal");
+    assert(InventoryManager::searchArrayBySku(items, count, "D200") == 1);
+    assert(InventoryManager::searchArrayBySku(items, count, "NONE") == -1);
 
-    assert(nearlyEqual(InventoryReport::calculateItemValue(items[0]), 15.0));
-    assert(nearlyEqual(InventoryReport::calculateTotalInventoryValue(items, count), 69.25));
+    InventoryManager::sortItemsByQuantity(items, count);
 
-    assert(InventoryReport::findItemBySku(items, count, "B200") == 1);
-    assert(InventoryReport::findItemBySku(items, count, "Z999") == -1);
-    assert(InventoryReport::findHighestValueItemIndex(items, count) == 2);
+    assert(items[0].quantity == 3);
+    assert(items[1].quantity == 7);
+    assert(items[2].quantity == 12);
+}
 
-    bool wroteReport = InventoryReport::writeInventoryReport(outputFilename, items, count);
-    assert(wroteReport);
+// Week 5: Strings and structures.
+void testWeek5StringsAndStructures() {
+    InventoryManager inventory;
 
-    ifstream in(outputFilename);
-    assert(in.is_open());
+    InventoryItem item;
+    item.sku = "E500";
+    item.name = "SocketSet";
+    item.quantity = 2;
+    item.price = 35.75;
+
+    assert(InventoryManager::isValidSku(item.sku));
+    assert(InventoryManager::isValidName(item.name));
+    assert(InventoryManager::isValidQuantity(item.quantity));
+    assert(InventoryManager::isValidPrice(item.price));
+
+    assert(inventory.addItem(
+        item.sku,
+        item.name,
+        item.quantity,
+        item.price
+    ));
+
+    const InventoryNode* found = inventory.findItem("E500");
+    assert(found != nullptr);
+    assert(found->item.sku == "E500");
+    assert(found->item.name == "SocketSet");
+}
+
+// Week 6: Pointers, dynamic memory, and linked lists.
+void testWeek6PointersDynamicMemoryAndLinkedLists() {
+    InventoryManager inventory;
+
+    assert(inventory.isEmpty());
+    assert(inventory.addItem("F100", "Bolt", 20, 0.50));
+    assert(inventory.addItem("F200", "Nut", 30, 0.25));
+    assert(inventory.addItem("F300", "Washer", 40, 0.10));
+
+    InventoryNode* node = inventory.findItem("F200");
+    assert(node != nullptr);
+    assert(node->item.name == "Nut");
+
+    assert(inventory.removeItem("F200"));
+    assert(inventory.findItem("F200") == nullptr);
+    assert(inventory.getItemCount() == 2);
+    assert(!inventory.removeItem("UNKNOWN"));
+
+    inventory.clear();
+    assert(inventory.isEmpty());
+    assert(inventory.getItemCount() == 0);
+}
+
+// Week 7: File input/output and integration.
+void testWeek7FileIOAndIntegration() {
+    const string inputFile = "tests/resources/inventory_test_input.txt";
+    const string reportFile = "tests/resources/inventory_test_report.txt";
+
+    {
+        ofstream output(inputFile);
+        assert(output.is_open());
+
+        output << "G100 Screwdriver 5 9.50\n";
+        output << "G200 Toolbox 2 45.00\n";
+        output << "G300 TapeMeasure 4 12.25\n";
+    }
+
+    InventoryManager inventory;
+
+    assert(inventory.loadFromFile(inputFile));
+    assert(inventory.getItemCount() == 3);
+    assert(inventory.findItem("G200") != nullptr);
+    assert(approximatelyEqual(inventory.calculateTotalValue(), 186.50));
+
+    assert(inventory.saveReportToFile(reportFile));
+
+    ifstream report(reportFile);
+    assert(report.is_open());
 
     string contents;
     string line;
 
-    while (getline(in, line)) {
+    while (getline(report, line)) {
         contents += line + "\n";
     }
 
-    assert(contents.find("Inventory Report") != string::npos);
-    assert(contents.find("A100") != string::npos);
-    assert(contents.find("Total inventory value") != string::npos);
+    assert(contents.find("INVENTORY REPORT") != string::npos);
+    assert(contents.find("G100") != string::npos);
+    assert(contents.find("G200") != string::npos);
+    assert(contents.find("G300") != string::npos);
+    assert(contents.find("186.50") != string::npos);
+
+    report.close();
+
+    remove(inputFile.c_str());
+    remove(reportFile.c_str());
 }
 
 int main() {
     testWeek1ProgramBasics();
     testWeek2DecisionsAndLoops();
-    testWeek3FunctionsAndProgramDesign();
-    testWeek4ArraysSearchingSorting();
+    testWeek3FunctionsAndDesign();
+    testWeek4ArraysSearchingAndSorting();
     testWeek5StringsAndStructures();
-    testWeek6SimpleLinkedTaskList();
-    testWeek7FileBasedInventoryReport();
+    testWeek6PointersDynamicMemoryAndLinkedLists();
+    testWeek7FileIOAndIntegration();
 
-    cout << "All corrected final project template tests passed!" << endl;
+    cout << "All Inventory Management System tests passed!" << endl;
+
     return 0;
 }

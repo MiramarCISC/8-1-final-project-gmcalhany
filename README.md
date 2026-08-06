@@ -1,138 +1,112 @@
-[![Open in Codespaces](https://classroom.github.com/assets/launch-codespace-2972f46106e565e64193e422d61a12cf1da4916b45550586e14ef0a7c637dd04.svg)](https://classroom.github.com/open-in-codespaces?assignment_repo_id=24290602)
-# CISC 192 Final Project Template
+# Inventory Management System
 
-## Overview
+## CISC 192 Final Project
 
-This repository contains a fully working sample project that demonstrates the course skills from Weeks 1–7.
+This project is a C++ Inventory Management System that allows a user to manage inventory items through a menu-driven program. Each inventory item contains a SKU, name, quantity, and price. The program can add, search, update, remove, display, sort, and save inventory information.
 
-The sample code is provided only as an example. It is **not intended to be submitted unchanged**.
+## Features
 
-## Important Student Instructions
+The program allows the user to:
 
-Before submitting your own final project, delete the sample project code and replace it with your own open-ended project.
+1. Display all inventory items
+2. Add a new inventory item
+3. Find an item by SKU
+4. Update an item's quantity
+5. Remove an item
+6. Display inventory sorted by quantity
+7. Save an inventory report to a file
+8. Exit the program
 
-The sample code demonstrates patterns you may reuse:
+The program also loads starting inventory data from `data/inventory.txt`.
 
-- Classes named as nouns from the project
-- Header/source separation
-- Unit tests
-- Arrays, searching, and sorting
-- Strings and structures/classes
-- A simple linked task list
-- A file-based inventory report
-- Test resource files stored in `tests/resources/`
+## Course Concepts Demonstrated
 
-Do not submit the unchanged sample project as your final project.
+This project incorporates concepts covered throughout CISC 192:
 
-## Correct Course Topics
+- **Program basics:** variables, constants, arithmetic, input, and output
+- **Decisions and loops:** menu processing, validation, and inventory traversal
+- **Functions:** separate functions for inventory operations and validation
+- **Arrays:** inventory items can be copied into an array for processing
+- **Searching:** inventory can be searched by SKU
+- **Sorting:** inventory items can be sorted by quantity
+- **Strings and structures:** each inventory item stores a SKU, name, quantity, and price
+- **Pointers and dynamic memory:** inventory nodes are dynamically allocated
+- **Linked lists:** inventory items are maintained using linked nodes
+- **File input/output:** starting inventory is loaded from a file and reports can be written to a file
+- **Testing:** automated tests verify the major features of the program
 
-Your final project is worth **7 points total**.
+## Project Structure
 
-Each topic is worth **1 point**:
-
-- **0.5 points** for integrating the topic into reachable project code
-- **0.5 points** for at least one unit test for that topic
-
-The seven required topics are:
-
-1. Week 1 Program Basics
-2. Week 2 Decisions and Loops
-3. Week 3 Functions and Program Design
-4. Week 4 Arrays, Searching, and Sorting
-5. Week 5 Strings and Structures
-6. Week 6 Pointers, Dynamic Memory, and Linked Lists
-7. Week 7 File I/O and Integration
-
-## Unreachable Code Rule
-
-Separate unreachable code is not acceptable.
-
-A topic only earns credit if it is part of your working project and can be reached through normal program execution, another project function/method, or an automated unit test.
+- `include/project.hpp` - declarations for the inventory structures, class, constants, and functions
+- `src/project.cpp` - implementation of the Inventory Management System
+- `src/main.cpp` - menu-driven user interface
+- `tests/test_project.cpp` - automated tests
+- `data/inventory.txt` - starting inventory data
 
 ## Build and Run
 
+Compile the program:
+
 ```bash
 make
+```
+
+Run the program:
+
+```bash
 ./main
 ```
 
-## Run Tests
+Run the automated tests:
 
 ```bash
 make test
 ```
 
-## Clean Build Files
+## Example Inventory
+
+The included data file contains example inventory items such as:
+
+- Apples
+- Bread
+- Cereal
+
+The program calculates the value of each item by multiplying its quantity by its price and can also calculate the total value of the entire inventory.
+
+## Testing
+
+The automated test suite checks:
+
+- Constants and calculations
+- Input validation
+- Duplicate SKU prevention
+- Adding inventory items
+- Finding items by SKU
+- Updating quantities
+- Removing items
+- Arrays
+- Searching and sorting
+- Strings and structures
+- Linked-list operations
+- Dynamic memory
+- File input/output
+- Inventory report generation
+- Total inventory value calculations
+
+Run the tests with:
 
 ```bash
-make clean
+make test
 ```
 
-## Object-Oriented Sample Design
-
-This sample uses noun-based classes from the sample project:
-
-| Class | Purpose |
-|---|---|
-| `ScoreList` | Demonstrates arrays, searching, sorting, and arithmetic |
-| `Student` | Demonstrates strings and custom record/class design |
-| `Task` | Demonstrates a task record |
-| `TaskNode` | Demonstrates linked list nodes |
-| `TaskList` | Demonstrates a simple linked task list |
-| `InventoryItem` | Demonstrates inventory records |
-| `InventoryReport` | Demonstrates file-based inventory reporting |
-
-## Sample Code Is Example Only
-
-The sample code in this repository should be deleted or replaced before final submission.
-
-Students may keep the project structure, Makefile, GitHub Actions workflow, and testing pattern, but the submitted project should reflect the student's own project idea.
-
-## Required README Update
-
-Before submitting your final project, update this README.md so it describes your own project.
+A successful test run displays:
 
 ```text
-## Course Topics Integrated and Tested
-
-1. Week 1 Program Basics
-   - Code location:
-   - Test location:
-
-2. Week 2 Decisions and Loops
-   - Code location:
-   - Test location:
-
-3. Week 3 Functions and Program Design
-   - Code location:
-   - Test location:
-
-4. Week 4 Arrays, Searching, and Sorting
-   - Code location:
-   - Test location:
-
-5. Week 5 Strings and Structures
-   - Code location:
-   - Test location:
-
-6. Week 6 Pointers, Dynamic Memory, and Linked Lists
-   - Code location:
-   - Test location:
-
-7. Week 7 File I/O and Integration
-   - Code location:
-   - Test location:
+All Inventory Management System tests passed!
 ```
 
-## Final Submission Checklist
+## Author
 
-- [ ] My project compiles with `make`.
-- [ ] My project runs with `./main`.
-- [ ] My tests run with `make test`.
-- [ ] I deleted or replaced the sample project code.
-- [ ] My project uses class names that are nouns from my own project.
-- [ ] My project integrates all 7 course topics in reachable code.
-- [ ] My project includes at least one unit test per course topic.
-- [ ] My README explains where each topic appears.
-- [ ] My README explains which test verifies each topic.
-- [ ] My code is committed and pushed to GitHub Classroom.
+Garrick McAlhany
+
+CISC 192 Final Project
